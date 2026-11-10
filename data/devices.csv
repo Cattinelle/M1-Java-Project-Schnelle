@@ -1,0 +1,4 @@
+id,name,type,powerRating,isOn,brightness,speed,targetTemperature
+L1,Desk Lamp,LIGHT,60.0,true,75,,
+F1,Ceiling Fan,FAN,50.0,false,,3,
+T1,Living Room Heater,THERMOSTAT,1500.0,true,,,22.5
