@@ -1,5 +1,6 @@
 package com.smarthome.repository;
 
+import com.smarthome.exception.DuplicateDeviceException;
 import com.smarthome.model.SmartDevice;
 import com.smarthome.model.SmartFan;
 import com.smarthome.model.SmartLight;
@@ -60,8 +61,13 @@ public class DeviceRepository {
         int loaded = 0;
         for (int i = 1; i < lines.size(); i++) { // line 0 is the header
             Optional<SmartDevice> device = parseLine(lines.get(i));
-            if (device.isPresent() && controller.addDevice(device.get())) { // addDevice rejects duplicate IDs
-                loaded++;
+            if (device.isPresent()) {
+                try {
+                    controller.addDevice(device.get());
+                    loaded++;
+                } catch (DuplicateDeviceException e) {
+                    // duplicate ID: the first record wins, this one is skipped like other invalid records
+                }
             }
         }
         return loaded;

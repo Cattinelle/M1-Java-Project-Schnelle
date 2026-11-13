@@ -2,34 +2,32 @@
 
 ## Schnelle's Smart Home Energy Manager
 
-A Java 17 console application for managing smart-home devices and estimating their energy consumption and electricity cost. It was built as an object-oriented programming final project, in five phases: device model, device management, CSV persistence, energy monitoring and the console application.
+A Java 17 console application for managing smart-home devices (lights, fans and thermostats) and estimating how much energy they use and what that electricity costs. The device data is loaded from a CSV file at start-up and saved after every change.
 
 ---
 
 ## Features
 
-- **View devices**: a table of every registered device (ID, name, type, ON/OFF status, power rating), then details for a selected device, including its specific setting and its current power draw.
+- **View devices**: a table of all devices (ID, name, type, ON/OFF, power rating), then the details of a selected device, including its setting and its current power draw.
 - **Manage devices**
-  - Add a SmartLight, SmartFan or Thermostat. Duplicate IDs are rejected and all inputs are validated.
+  - Add a SmartLight, SmartFan or Thermostat.
   - Remove a device, with a confirmation step.
   - Turn a device ON or OFF.
-  - Modify the device-specific setting: brightness 0–100 %, fan speed 1–5, or target temperature 10–30 °C.
+  - Change the device's setting: brightness 0–100 %, fan speed 1–5, or target temperature 10–30 °C.
 - **Energy monitoring**
   - Enter the operating hours for each device. Press ENTER if a device did not run.
-  - Shows each device's consumption and the household total in kWh.
-  - Estimates the electricity cost with a fixed tariff of **€0.25/kWh**. The tariff is shown before the cost, and the hours entered earlier in the session are reused.
-- **Persistence**: devices are loaded from `data/devices.csv` at start-up, saved after every change, and saved again on exit.
-- **Help**: a short guide inside the application.
-- **Robust input**: invalid menu choices, text where a number is expected, empty IDs, unknown devices and out-of-range values all produce a clear message, and the application keeps running.
+  - Shows each device's consumption and the total in kWh.
+  - Estimates the electricity cost at a fixed tariff of €0.25/kWh. The tariff is shown before the cost.
+  - The hours entered are reused for the cost estimate during the same session.
+- **Persistence**: devices are loaded from `data/devices.csv` at start-up, saved after every add, remove, switch or setting change, and saved again on exit.
+- **Help**: usage instructions inside the application.
+- **Input validation**: invalid menu choices, non-numeric input, empty, invalid or duplicate IDs, unknown devices and out-of-range settings produce an error message, and the application keeps running.
 
 ---
 
-## Requirements
+## How to run
 
-- JDK 17 or newer (`java -version`).
-- Nothing else. Maven is downloaded automatically by the included **Maven Wrapper**.
-
-## Running the application
+Requirements: JDK 17 or newer. Maven does not need to be installed, because the included Maven Wrapper downloads it on first use.
 
 From the project folder (Windows PowerShell):
 
@@ -37,89 +35,71 @@ From the project folder (Windows PowerShell):
 .\mvnw.cmd -q compile exec:java
 ```
 
-Or build a runnable jar first:
+Or build a jar and run it:
 
 ```powershell
 .\mvnw.cmd package
 java -jar target\smarthome-energy-manager-1.0.0.jar
 ```
 
-On macOS/Linux, use `./mvnw` instead of `.\mvnw.cmd`.
+- On macOS/Linux, use `./mvnw` instead of `.\mvnw.cmd`.
+- Start the application from the project folder, because `data/devices.csv` is a relative path.
+- If `€` is shown as `?` in a Windows console, run `chcp 65001` first to switch the console to UTF-8.
 
-Start the application from the project folder, because the data file path `data/devices.csv` is relative to the current folder.
-
-**€ sign shows as `?`:** classic Windows consoles use a code page that has no euro sign. Switch the console to UTF-8 before starting the application:
-
-```powershell
-chcp 65001
-```
-
-## Running the tests
+## How to run the tests
 
 ```powershell
 .\mvnw.cmd clean test
 ```
 
-147 JUnit 5 tests cover the model, the services, the repository and the console classes. The tests use temporary folders, so `data/devices.csv` is never changed by a test run.
+The JUnit 5 tests cover the device classes, the controller, the energy calculator, the CSV repository and the console menus, with normal, edge and invalid cases. File tests use temporary folders, so `data/devices.csv` is never changed. The menu tests run complete dialogues with scripted input.
 
 ---
 
-## Project structure
+## Project structure and main classes
 
 ```text
 src/main/java/com/smarthome/
-├── SmartHomeApp.java                 entry point
-├── interfaces/
-│   ├── Switchable.java               turnOn(), turnOff(), isOn()
-│   └── EnergyConsumable.java         calculateConsumption(hours)
-├── model/
-│   ├── SmartDevice.java              abstract base class
-│   ├── SmartLight.java               brightness 0–100 %
-│   ├── SmartFan.java                 speed 1–5
-│   └── Thermostat.java               target temperature 10–30 °C
-├── service/
-│   ├── SmartHomeController.java      device management
-│   └── EnergyCalculator.java         consumption totals and cost
-├── repository/
-│   └── DeviceRepository.java         CSV loading and saving
-├── ui/
-│   ├── ConsoleMenu.java              main menu, view, help, exit
-│   ├── DeviceManagementMenu.java     add / remove / switch / modify
-│   ├── EnergyMenu.java               operating hours, kWh and cost
-│   └── InputHandler.java             reading and parsing console input
-└── exception/
-    └── InvalidInputException.java    custom checked exception
-data/devices.csv                      saved devices
+├── SmartHomeApp.java          entry point
+├── interfaces/                Switchable, EnergyConsumable
+├── model/                     SmartDevice (abstract), SmartLight, SmartFan, Thermostat
+├── service/                   SmartHomeController, EnergyCalculator
+├── repository/                DeviceRepository
+├── ui/                        ConsoleMenu, DeviceManagementMenu, EnergyMenu, InputHandler
+└── exception/                 InvalidInputException, DuplicateDeviceException
+data/devices.csv               initial and saved device data
 ```
-
-## Main classes and responsibilities
 
 | Class | Responsibility |
 |---|---|
-| `SmartHomeApp` | Creates the objects, loads the devices and starts the menu. Stops if the data file cannot be read, so it is not overwritten. |
-| `SmartDevice` | Holds the shared state (ID, name, power rating, ON/OFF), the switching logic, validation, and the energy formula. |
-| `SmartLight`, `SmartFan`, `Thermostat` | Store and validate their own setting, and calculate their effective power from it. |
-| `SmartHomeController` | Keeps the registered devices in a private `List<SmartDevice>`: add (no duplicate IDs), remove, find (`Optional`), list, switch and update settings. |
-| `EnergyCalculator` | Calculates device and total consumption for individual operating hours, the cost, and the cost summary text. It holds the tariff constant `TARIFF_PER_KWH`. |
-| `DeviceRepository` | Reads and writes `data/devices.csv`. |
-| `ConsoleMenu` | Shows the main menu and passes each choice on. Handles *View*, *Help* and *Exit*. |
-| `DeviceManagementMenu` | User dialogue for adding, removing, switching and modifying devices, plus auto-saving. |
-| `EnergyMenu` | Collects the operating hours (kept in memory for the session) and displays the consumption and cost. |
-| `InputHandler` | Reads a line and asks again until its format is valid (number, y/n, non-empty text). |
-| `InvalidInputException` | Signals input text that cannot be understood. |
+| `SmartHomeApp` | Creates the objects, loads the devices and starts the menu. Stops if the data file cannot be read. |
+| `SmartDevice` | Abstract base class with the shared state (ID, name, power rating, ON/OFF), validation, switching and the energy formula. |
+| `SmartLight`, `SmartFan`, `Thermostat` | Each stores and validates its own setting and calculates its effective power from it. |
+| `SmartHomeController` | Manages the registered devices: add (no duplicate IDs), remove, find, list, switch and change settings. |
+| `EnergyCalculator` | Calculates device and total consumption from per-device hours, the cost, and the cost summary. It holds `TARIFF_PER_KWH`. |
+| `DeviceRepository` | Loads and saves devices in the CSV file. |
+| `ConsoleMenu` | Main menu, *View devices*, *Help* and *Exit*. |
+| `DeviceManagementMenu` | Dialogues for adding, removing, switching and modifying devices, and saving after each change. |
+| `EnergyMenu` | Collects the operating hours for the session and shows the consumption and cost. |
+| `InputHandler` | Reads console input and asks again until the format is valid. |
+| `InvalidInputException` | Custom exception for input that cannot be understood. |
+| `DuplicateDeviceException` | Custom exception for registering a device with an ID that is already used. |
 
 ---
 
 ## OOP concepts
 
-### Encapsulation
-All fields are `private`. Values can only change through methods that validate them, for example `setBrightness()` rejects 150. `id` and `powerRating` are `final`. `SmartHomeController.getAllDevices()` returns a read-only copy, so the internal list cannot be changed from outside.
+**Encapsulation.**
+- The device classes keep their state in private fields, which can only be accessed or modified through their methods. For example, `setBrightness(150)` is rejected.
+- `id` and `powerRating` are `final`.
+- `SmartHomeController.getAllDevices()` returns a read-only copy of its internal list.
 
-### Inheritance
-`SmartLight`, `SmartFan` and `Thermostat` extend `SmartDevice`. They inherit the constructor validation, the ON/OFF logic, `calculateConsumption()` and `getDeviceInfo()`. Each subclass extends `getDeviceInfo()` with `super.getDeviceInfo()` plus its own setting.
+**Inheritance.**
+- `SmartLight`, `SmartFan` and `Thermostat` extend `SmartDevice`.
+- They inherit the validation, ON/OFF logic, `calculateConsumption()` and `getDeviceInfo()`.
+- Each one extends `getDeviceInfo()` with `super.getDeviceInfo()` plus its own setting.
 
-### Polymorphism
-The controller, the calculator, the repository and the menus all work with `SmartDevice` references. A call such as `device.calculateConsumption(hours)` uses the correct `getEffectivePower()` for each type:
+**Polymorphism.** Devices are stored and processed as `SmartDevice`. `EnergyCalculator.calculateTotalConsumption()` loops over `List<SmartDevice>` and calls `calculateConsumption(hours)` on each one. The result depends on each object's own `getEffectivePower()`:
 
 | Type | Effective power |
 |---|---|
@@ -127,25 +107,36 @@ The controller, the calculator, the repository and the menus all work with `Smar
 | SmartFan | rating × speed / 5 |
 | Thermostat | rating × target temperature / 30 |
 
-`getDeviceType()` and `getDeviceInfo()` are also overridden. Type checks with `instanceof` are used only where a type-specific setter is needed: changing a setting, and writing the CSV columns.
+`getDeviceType()` and `getDeviceInfo()` are also overridden. `instanceof` is used where a type-specific setting has to be read or changed: the controller's setting methods, the setting dialogue and the CSV writer.
 
-### Abstract classes and interfaces
-- `Switchable` and `EnergyConsumable` are interfaces describing two separate capabilities: being switched, and consuming energy.
-- `SmartDevice` is an **abstract class** that implements both interfaces once, so the subclasses share that code.
-- It declares two abstract methods that each subclass must provide: `getDeviceType()` and `getEffectivePower()`.
-- `calculateConsumption()` is `final`, so the formula `Energy (kWh) = Effective Power (W) × Hours ÷ 1000`, the zero-when-OFF rule and the hours validation cannot be changed by a subclass.
+**Abstract class and interfaces.**
+- `SmartDevice` is abstract because a generic "device" cannot calculate its own power. It declares `getEffectivePower()` and `getDeviceType()`, which each subclass must implement.
+- Its `calculateConsumption()` is `final`, so every device follows the same rule: `kWh = effective power (W) × hours ÷ 1000`, 0 when OFF, invalid hours rejected.
+- `Switchable` (`turnOn`, `turnOff`, `isOn`) and `EnergyConsumable` (`calculateConsumption`) define the two capabilities as small separate contracts. `SmartDevice` implements both once for all subclasses.
 
-### Exceptions
-- **Custom exception `InvalidInputException`** (checked). The `InputHandler` parsers throw it when typed text cannot be understood, for example `"abc"` for a number, `"maybe"` for y/n, or an empty value. The read methods catch it, show its message and ask again. Making it checked means the compiler forces this handling.
-- **`IllegalArgumentException`** for invalid values: model rules such as brightness 0–100 or a positive power rating, and invalid operating hours or energy values. The menus catch it and show the model's own message, so validation rules are not duplicated in the UI.
-- **`IOException`** for real file problems: the file can't be read or written, or it has a wrong header. These are reported to the user and never silently ignored.
-- **`NoSuchElementException`** from the `Scanner` when the input stream is closed (Ctrl+Z / Ctrl+D). The application then saves and exits cleanly.
+---
+
+## Exception handling
+
+- **Custom exception: `InvalidInputException`** (checked).
+  - Thrown by the `InputHandler` parsers when typed text cannot be understood: `"abc"` for a number, `"maybe"` for yes/no, or an empty value.
+  - The read methods catch it, display the message and ask again.
+  - Because it is checked, the compiler forces this handling.
+- **Custom exception: `DuplicateDeviceException`** (unchecked).
+  - Thrown by `SmartHomeController.addDevice()` when a device with the same ID (ignoring case) is already registered. The message names the conflicting ID.
+  - `DeviceManagementMenu` catches it, shows the message and does not add or save the device. `DeviceRepository` catches it while loading and skips the duplicate record, so the first record with an ID wins.
+  - It is unchecked because callers can avoid it by checking `findDevice()` first, which the menu does to warn the user early.
+- **`IllegalArgumentException`** for values that break a business rule, thrown by the model and the calculator.
+  - Examples: an invalid ID, an empty name, a power rating ≤ 0, brightness, speed or temperature out of range, and negative or non-finite hours.
+  - The menus catch it, display the model's message and either ask again or cancel the action.
+- **`IOException`** for file problems: the file cannot be read or written, or it has a wrong CSV header. These are passed to the caller and reported to the user.
+- **`NoSuchElementException`** when the console input is closed. `ConsoleMenu` catches it, saves the devices and exits normally.
 
 ---
 
 ## CSV data loading and persistence
 
-One file stores all device types. Columns that do not apply to a type stay empty:
+One CSV file stores all device types. Columns that do not apply to a type are left empty:
 
 ```csv
 id,name,type,powerRating,isOn,brightness,speed,targetTemperature
@@ -154,38 +145,42 @@ F1,Ceiling Fan,FAN,50.0,false,,3,
 T1,Living Room Heater,THERMOSTAT,1500.0,true,,,22.5
 ```
 
-- **Start-up**
-  - `DeviceRepository.loadInto(controller)` rebuilds each device with its normal constructor and setter, restores ON/OFF with `turnOn()`/`turnOff()`, and registers it through `controller.addDevice()`, which also rejects duplicate IDs.
-  - If the file is missing, it is created with the header.
-  - An empty file loads nothing.
-  - Invalid records are skipped: wrong column count, unknown type, missing or out-of-range values. The valid records still load.
-  - A wrong header is reported as an error, and the application stops instead of overwriting the file.
-- **Saving**
-  - Saving happens after every add, remove, switch and modify, and again on exit as a safeguard.
-  - Commas in device names are saved as spaces, because a comma would split the CSV columns. The user is warned when entering such a name.
-- **Not saved:** operating hours are kept in memory for the current session only.
+- **Start-up:** `SmartHomeApp` calls `DeviceRepository.loadInto(controller)`. For each record, the repository:
+  - creates the correct subclass with its normal constructor and setter, so the model validation is reused,
+  - restores ON/OFF with `turnOn()` or `turnOff()`,
+  - registers the device with `controller.addDevice()`, which rejects duplicate IDs.
+- **Missing or empty file:** a missing file is created with the header, and an empty file loads no devices.
+- **Invalid records** are skipped, and the valid ones still load. Invalid means a wrong column count, an unknown type, a missing or out-of-range value, or an invalid ID.
+- **Wrong header:** an `IOException` is reported, and the application stops instead of overwriting the file.
+- **Saving:** `DeviceRepository.save(controller)` rewrites the whole file after every change and on exit. Operating hours are not saved; they only last for the current session.
+
+**Limitations:**
+- Skipped records are not reported to the user, and they disappear from the file at the next save.
+- Commas in device names are saved as spaces.
 
 ---
 
 ## SOLID principles
 
-- **Single Responsibility:** each class has one job. The models hold device rules, the controller manages the collection, the calculator does the energy arithmetic, the repository handles files, and the UI classes talk to the user. `InputHandler` only parses input, and the three menu classes each handle one menu.
-- **Open/Closed:** a new device type can be added by writing a new `SmartDevice` subclass. The controller and the calculator work unchanged, because they rely on `getEffectivePower()` through polymorphism. Only the UI and the CSV mapping need a new case.
-- **Liskov Substitution:** every subclass can be used wherever a `SmartDevice` is expected. The `final` `calculateConsumption()` guarantees that all of them follow the same energy contract.
-- **Interface Segregation:** switching (`Switchable`) and energy use (`EnergyConsumable`) are separate small interfaces instead of one large one.
-- **Dependency Inversion (applied simply):** dependencies are passed in through constructors. `SmartHomeApp` creates the objects, and the menus receive the controller, repository, calculator, input and output. Tests can therefore pass a temporary CSV file and scripted input. No extra interfaces were created only for this, to keep the project small.
+These are the principles the code actually demonstrates:
+
+- **Single Responsibility:** each class has one job.
+  - Device rules live in the model.
+  - `SmartHomeController` manages the collection.
+  - `EnergyCalculator` does the arithmetic.
+  - `DeviceRepository` handles the file.
+  - The `ui` classes handle user interaction, and the console is split into three menus and an input reader instead of one large class.
+- **Liskov Substitution:** every subclass can replace `SmartDevice` anywhere it is used. The `final` `calculateConsumption()` guarantees that all device types follow the same energy contract.
+- **Open/Closed (energy calculation only):** A new device type must implement `getEffectivePower()` and `getDeviceType()`. `SmartDevice.calculateConsumption()` and `EnergyCalculator` work for it without changes. This does not apply to the whole application: the controller's setting methods, the setting dialogue and the CSV mapping contain type-specific code and would need a new case.
+- **Interface Segregation:** switching and energy consumption are two small interfaces rather than one large one. In this project, only `SmartDevice` implements them.
+- **Dependency Inversion (partly):** classes receive their collaborators through their constructors instead of creating them. For example, the menus receive the controller, repository, calculator, input and output. This is what lets the tests use a temporary file and scripted input. The dependencies are concrete classes, not interfaces.
 
 ---
 
 ## Technical decisions
 
-- **Validation in one place.** Range rules live in the model setters and constructors. The UI only checks the input format, then calls the model and shows its error message. This avoids duplicated, possibly conflicting rules.
-- **`boolean` results and `Optional` in the controller.** "Device not found" and "duplicate ID" are normal situations in a menu, so the controller reports them with `false` or `Optional.empty()` instead of exceptions.
-- **Case-insensitive IDs.** `l1` finds `L1`, and `L1` and `l1` cannot both exist. This is friendlier for console input.
-- **Operating hours in a `Map<SmartDevice, Double>`.** Each device has its own hours. A missing entry means the device did not run. Hours are validated immediately when entered, by reusing `EnergyCalculator.calculateDeviceConsumption()`.
-- **The tariff is defined once.** `EnergyCalculator.TARIFF_PER_KWH`. The displayed tariff and the cost calculation both use this constant.
-- **`Locale.ROOT` for numbers in output and CSV.** Decimals always use a dot (`22.5`), whatever the system's language settings. Input accepts both `22.5` and `22,5`.
-- **Simple CSV without quoting.** Easier to read and explain. The trade-off is that commas are not allowed in names.
-- **Stop when the file cannot be loaded.** Starting with an empty list and auto-saving would overwrite and lose the user's data.
-- **Testable console.** The menus write to a `PrintStream` and read through a `Scanner` passed in from outside, so complete menu dialogues are tested with scripted input.
-- **No external libraries.** Only the Java standard library, plus JUnit 5 for tests.
+1. **Validation lives in the model classes.** Constructors and setters enforce the rules (ID characters, ranges, a positive power rating). The UI only checks the input format, then shows the model's error message. Each rule exists once, so the UI and the model cannot disagree.
+2. **A simple CSV format without quoting.** It is easy to read and explain. To keep the columns intact, device IDs may only contain letters, digits, `-` and `_`, and commas in names are saved as spaces.
+3. **Duplicate IDs throw an exception, lookups return `boolean` or `Optional`.** Registering a duplicate ID breaks a business rule, so `addDevice()` throws `DuplicateDeviceException` and the caller cannot ignore it. A device that is not found is an expected situation in a menu, so `findDevice()` returns `Optional`, and remove, switch and the setting methods return `false`.
+4. **Operating hours are stored in a `Map<SmartDevice, Double>` for the session.** Each device has its own hours, and a missing entry means the device did not run. Keeping the hours in memory means the cost estimate can reuse them without asking again.
+5. **The application stops if the data file cannot be read.** Starting with an empty list and auto-saving would overwrite the user's file and lose their data.

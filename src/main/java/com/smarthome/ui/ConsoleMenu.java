@@ -78,10 +78,10 @@ public class ConsoleMenu {
             return;
         }
 
-        out.println(String.format("%-6s %-25s %-11s %-6s %12s", "ID", "Name", "Type", "Status", "Power"));
-        out.println("-".repeat(64));
+        out.println(String.format("%-10s %-25s %-11s %-6s %12s", "ID", "Name", "Type", "Status", "Power"));
+        out.println("-".repeat(68));
         for (SmartDevice device : devices) {
-            out.println(String.format(Locale.ROOT, "%-6s %-25s %-11s %-6s %10.1f W",
+            out.println(String.format(Locale.ROOT, "%-10s %-25s %-11s %-6s %10.1f W",
                     device.getId(), device.getDeviceName(), device.getDeviceType(),
                     device.isOn() ? "ON" : "OFF", device.getPowerRating()));
         }

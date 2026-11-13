@@ -91,9 +91,11 @@ class DeviceManagementMenuTest {
 
         String output = runWithInput("1", "1", "f1", "5");
 
-        assertTrue(output.contains("Error: a device with ID 'f1' already exists."));
+        assertTrue(output.contains("Error: a device with ID 'f1' already exists. Device not added."));
+        assertFalse(output.contains("Device added:"));
         assertEquals(1, controller.getAllDevices().size());
         assertInstanceOf(SmartFan.class, controller.findDevice("F1").orElseThrow());
+        assertFalse(Files.exists(repository.getFilePath())); // nothing saved
     }
 
     @Test
@@ -104,6 +106,16 @@ class DeviceManagementMenuTest {
         assertTrue(output.contains("Error: Power rating must be a positive number of watts. Device not added."));
         assertTrue(controller.getAllDevices().isEmpty());
         assertFalse(Files.exists(repository.getFilePath())); // nothing changed, nothing saved
+    }
+
+    @Test
+    void addRejectsInvalidIdAndWritesNothing() {
+        String output = runWithInput("1", "1", "K,1", "Kitchen Lamp", "40", "5");
+
+        assertTrue(output.contains("Error: Device ID may only contain letters, numbers, hyphens (-) and underscores (_)."
+                + " Device not added."));
+        assertTrue(controller.getAllDevices().isEmpty());
+        assertFalse(Files.exists(repository.getFilePath())); // no corrupted record written
     }
 
     @Test

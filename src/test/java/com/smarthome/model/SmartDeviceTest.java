@@ -1,6 +1,8 @@
 package com.smarthome.model;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 
@@ -26,6 +28,26 @@ class SmartDeviceTest {
         assertThrows(IllegalArgumentException.class, () -> new SmartLight(null, "Lamp", 60));
         assertThrows(IllegalArgumentException.class, () -> new SmartLight("", "Lamp", 60));
         assertThrows(IllegalArgumentException.class, () -> new SmartLight("   ", "Lamp", 60));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"L1", "FAN02", "LIGHT-01", "ROOM_01"})
+    void constructorAcceptsIdsWithLettersNumbersHyphensAndUnderscores(String id) {
+        assertEquals(id, new SmartLight(id, "Lamp", 60).getId());
+    }
+
+    @Test
+    void constructorTrimsSpacesAroundValidId() {
+        assertEquals("L1", new SmartLight("  L1  ", "Lamp", 60).getId());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"K,1", "L 1", "L@1", "L.1", "L1/2"})
+    void constructorRejectsIdsWithOtherCharacters(String id) {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> new SmartLight(id, "Lamp", 60));
+        assertEquals("Device ID may only contain letters, numbers, hyphens (-) and underscores (_).",
+                e.getMessage());
     }
 
     @Test

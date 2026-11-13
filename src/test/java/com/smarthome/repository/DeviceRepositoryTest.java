@@ -304,4 +304,18 @@ class DeviceRepositoryTest {
         assertEquals("Existing Fan", controller.findDevice("F1").orElseThrow().getDeviceName());
         assertEquals(2, controller.getAllDevices().size());
     }
+
+    @Test
+    void loadContinuesWithValidRecordsAfterDuplicates() throws IOException {
+        writeCsv("L1,Desk Lamp,LIGHT,60.0,true,75,,",
+                "L1,Duplicate Lamp,LIGHT,40.0,false,20,,",
+                "F1,Ceiling Fan,FAN,50.0,false,,3,",
+                "f1,Duplicate Fan,FAN,30.0,true,,5,",
+                "T1,Heater,THERMOSTAT,1500.0,true,,,22.5");
+
+        assertEquals(3, repository.loadInto(controller));
+        assertEquals("Desk Lamp", controller.findDevice("L1").orElseThrow().getDeviceName());
+        assertEquals("Ceiling Fan", controller.findDevice("F1").orElseThrow().getDeviceName());
+        assertTrue(controller.findDevice("T1").isPresent());
+    }
 }

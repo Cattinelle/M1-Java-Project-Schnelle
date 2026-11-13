@@ -3,7 +3,11 @@ package com.smarthome.model;
 import com.smarthome.interfaces.EnergyConsumable;
 import com.smarthome.interfaces.Switchable;
 
+import java.util.regex.Pattern;
+
 public abstract class SmartDevice implements Switchable, EnergyConsumable {
+
+    private static final Pattern ID_PATTERN = Pattern.compile("[a-zA-Z0-9_-]+");
 
     private final String id;
     private String deviceName;
@@ -13,6 +17,10 @@ public abstract class SmartDevice implements Switchable, EnergyConsumable {
     protected SmartDevice(String id, String deviceName, double powerRating) {
         if (id == null || id.isBlank()) {
             throw new IllegalArgumentException("Device ID must not be empty.");
+        }
+        if (!ID_PATTERN.matcher(id.trim()).matches()) { // also keeps commas out of the CSV file
+            throw new IllegalArgumentException(
+                    "Device ID may only contain letters, numbers, hyphens (-) and underscores (_).");
         }
         if (!Double.isFinite(powerRating) || powerRating <= 0) {
             throw new IllegalArgumentException("Power rating must be a positive number of watts.");

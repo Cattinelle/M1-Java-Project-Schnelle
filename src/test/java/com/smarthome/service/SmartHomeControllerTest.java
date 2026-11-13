@@ -1,5 +1,6 @@
 package com.smarthome.service;
 
+import com.smarthome.exception.DuplicateDeviceException;
 import com.smarthome.model.SmartDevice;
 import com.smarthome.model.SmartFan;
 import com.smarthome.model.SmartLight;
@@ -36,17 +37,30 @@ class SmartHomeControllerTest {
     void addDeviceRegistersNewDevice() {
         SmartLight lamp = new SmartLight("L2", "Bedside Lamp", 40);
 
-        assertTrue(controller.addDevice(lamp));
+        controller.addDevice(lamp);
+
         assertEquals(4, controller.getAllDevices().size());
         assertSame(lamp, controller.findDevice("L2").orElseThrow());
     }
 
     @Test
-    void addDeviceRejectsDuplicateId() {
-        assertFalse(controller.addDevice(new SmartFan("L1", "Another Device", 30)));
-        assertFalse(controller.addDevice(new SmartFan("l1", "Lowercase ID", 30))); // IDs are not case-sensitive
+    void addDeviceThrowsForDuplicateId() {
+        DuplicateDeviceException e = assertThrows(DuplicateDeviceException.class,
+                () -> controller.addDevice(new SmartFan("L1", "Another Device", 30)));
+
+        assertEquals("A device with ID 'L1' already exists.", e.getMessage());
         assertEquals(3, controller.getAllDevices().size());
         assertSame(light, controller.findDevice("L1").orElseThrow()); // original kept
+    }
+
+    @Test
+    void addDeviceThrowsForDuplicateIdWithDifferentCase() {
+        DuplicateDeviceException e = assertThrows(DuplicateDeviceException.class,
+                () -> controller.addDevice(new SmartFan("l1", "Lowercase ID", 30))); // IDs are not case-sensitive
+
+        assertEquals("A device with ID 'l1' already exists.", e.getMessage());
+        assertEquals(3, controller.getAllDevices().size());
+        assertSame(light, controller.findDevice("L1").orElseThrow());
     }
 
     @Test
@@ -66,7 +80,8 @@ class SmartHomeControllerTest {
     @Test
     void removedIdCanBeReused() {
         controller.removeDevice("F1");
-        assertTrue(controller.addDevice(new SmartFan("F1", "New Fan", 40)));
+        assertDoesNotThrow(() -> controller.addDevice(new SmartFan("F1", "New Fan", 40)));
+        assertEquals("New Fan", controller.findDevice("F1").orElseThrow().getDeviceName());
     }
 
     @Test

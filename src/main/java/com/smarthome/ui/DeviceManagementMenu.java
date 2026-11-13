@@ -1,5 +1,6 @@
 package com.smarthome.ui;
 
+import com.smarthome.exception.DuplicateDeviceException;
 import com.smarthome.model.SmartDevice;
 import com.smarthome.model.SmartFan;
 import com.smarthome.model.SmartLight;
@@ -89,7 +90,12 @@ public class DeviceManagementMenu {
             return;
         }
 
-        controller.addDevice(device);
+        try {
+            controller.addDevice(device); // the controller guarantees unique IDs
+        } catch (DuplicateDeviceException e) {
+            out.println("Error: " + e.getMessage() + " Device not added.");
+            return;
+        }
         changeSetting(device);
         if (input.readYesNo("Turn the device ON now? (y/n): ")) {
             controller.turnOnDevice(device.getId());

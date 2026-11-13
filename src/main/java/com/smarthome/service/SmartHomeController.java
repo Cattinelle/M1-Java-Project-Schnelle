@@ -1,5 +1,6 @@
 package com.smarthome.service;
 
+import com.smarthome.exception.DuplicateDeviceException;
 import com.smarthome.model.SmartDevice;
 import com.smarthome.model.SmartFan;
 import com.smarthome.model.SmartLight;
@@ -11,7 +12,8 @@ import java.util.Optional;
 
 //SmartHomeController:
 //Manages all registered devices.
-//Methods return false when the device is missing (or is the wrong type).
+//Adding a device with an ID that is already used throws DuplicateDeviceException.
+//Other methods return false when the device is missing (or is the wrong type).
 //Invalid property values are rejected by the device classes themselves.
 public class SmartHomeController {
 
@@ -19,15 +21,14 @@ public class SmartHomeController {
 
     // Device registration
 
-    public boolean addDevice(SmartDevice device) {
+    public void addDevice(SmartDevice device) {
         if (device == null) {
             throw new IllegalArgumentException("Device must not be null.");
         }
         if (findDevice(device.getId()).isPresent()) {
-            return false; // duplicate ID
+            throw new DuplicateDeviceException("A device with ID '" + device.getId() + "' already exists.");
         }
         devices.add(device);
-        return true;
     }
 
     public boolean removeDevice(String id) {

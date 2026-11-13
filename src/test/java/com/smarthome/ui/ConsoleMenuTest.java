@@ -77,7 +77,7 @@ class ConsoleMenuTest {
 
         String output = runWithInput("1", "l1", "5");
 
-        assertTrue(output.contains("L1     Desk Lamp                 Light       ON           60.0 W"));
+        assertTrue(output.contains("L1         Desk Lamp                 Light       ON           60.0 W"));
         assertTrue(output.contains("--- Device details ---"));
         assertTrue(output.contains("Brightness: 75%"));
         assertTrue(output.contains("Power at current setting: 45.0 W"));
